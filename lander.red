@@ -11,8 +11,8 @@ system/view/auto-sync?:  yes
 ; Game data & defaults object
 GameData: context [
 	GameRate: 0:00:00.004 
-	Gravity: 3
-	Antigravity: 3
+	Gravity: 1
+	Antigravity: 1
 	HorizontalStep: 1
 	DeadAltitude: 60
 	TerrainColor: 178.178.178.0
@@ -27,8 +27,7 @@ GameData: context [
 					  image: copy MoonImg extra: [] focus: true]
 	MoonFace: Moon
 	MoonFaceHalfSizeX: (MoonFace/size/x / 2) * -1
-			  
-	
+				  
 	; Make lander object
 	Lander: object [
 			name: "Lander"
@@ -38,7 +37,7 @@ GameData: context [
 			offset: to-pair 400x10 
 			direction: 6
 			rate: 0:0:00.1
-			walking: 0
+			firing: 0
 			lastdir: 0
 			inertia: 0.0
 			altitude: 0
@@ -47,11 +46,15 @@ GameData: context [
 			display: true
 			dead: false
 			image: load %ship.png
-			images: copy []			
+			images: copy []  
+			append images load %fship1.png
+			append images load %fship2.png
+			append images load %fship3.png
 			face: object! []
 	]
 ]
 
+; Check game status
 CheckStatus: function [][
 	Ret: false
 		
@@ -62,9 +65,10 @@ CheckStatus: function [][
 	return Ret
 ]
 
-
-; Gravity function for lander
+; Gravity affect for lander
 LanderGravity: function [f [object!]] [
+	GameData/Lander/face/image: Gamedata/Lander/image
+	GameData/Lander/face/offset/y: add GameData/Lander/face/offset/y GameData/Gravity
 ]
 
 ; Check keyboard for handling
@@ -72,13 +76,23 @@ CheckKeyboard: function [face key][
 	switch key [
 		left [GoLeft GameData/Moon]
 		right [GoRight GameData/Moon]
-		up [GoUp GameData/PlayerFace]
-		down [GoDown GameData/PlayerFace]
-		#" " [GoAction GameData/PlayerFace]
+		#" " [GoAction GameData/Lander/face]
 	]
 ]
 
-; Left direction simulation
+; Action effect for ship
+GoAction: function [f [object!]][
+	if f/offset/y < 1 [return 0]
+	either f/extra/firing < 3 [f/extra/firing: add f/extra/firing 1][f/extra/firing: 1]
+	switch f/extra/firing [
+		1 [f/image: Gamedata/Lander/images/1]
+		2 [f/image: Gamedata/Lander/images/2]
+		3 [f/image: Gamedata/Lander/images/3]		
+	]
+	f/offset/y: subtract f/offset/y GameData/Antigravity
+]
+
+; Ship going left direction 
 GoLeft: function [f [object!]][
 
 	; if ship is at the window center move the scenary else move the ship
@@ -96,7 +110,7 @@ GoLeft: function [f [object!]][
 	]
 ]
 
-; Right direction simulation
+; Ship going ight direction
 GoRight: function [f [object!]][
 
 	; if ship is at the window center move the scenary else move the ship
@@ -113,8 +127,6 @@ GoRight: function [f [object!]][
 		]
 	]
 ]
-
-
 
 ; Set game screen layout
 GameScr: layout [
@@ -133,12 +145,15 @@ GameScr: layout [
 	below
 ]
 
-	LanderFace: make face! [type: 'base size: GameData/Lander/size offset: GameData/Lander/offset image: copy GameData/Lander/image extra: GameData/Lander
-							rate: GameData/Lander/rate actors: context [on-time: func [f e][LanderGravity f]]]
-	GameData/Lander/face: LanderFace
-	append GameScr/pane GameData/Moon
-	append GameScr/pane LanderFace
+; Setup ship
+LanderFace: make face! [type: 'base size: GameData/Lander/size offset: GameData/Lander/offset image: copy GameData/Lander/image extra: GameData/Lander
+						rate: GameData/Lander/rate actors: context [on-time: func [f e][LanderGravity f]]]
+GameData/Lander/face: LanderFace
+LanderFace/extra: GameData/Lander
+append GameScr/pane GameData/Moon
+append GameScr/pane LanderFace
 	
+; Start game
 view/options GameScr [actors: context [on-key: func [face event][CheckKeyboard face event/key]]]
 
 
