@@ -30,27 +30,48 @@ GameData: context [
 				  
 	; Make lander object
 	Lander: object [
-			name: "Lander"
-			facename: "LanderFace" 
-			face: copy []
-			size: to-pair 20x20 
-			offset: to-pair 400x10 
-			direction: 6
-			rate: 0:0:00.1
-			firing: 0
-			lastdir: 0
-			inertia: 0.0
-			altitude: 0
-			lives: 4
-			gravity: true
-			display: true
-			dead: false
-			image: load %ship.png
-			images: copy []  
-			append images load %fship1.png
-			append images load %fship2.png
-			append images load %fship3.png
-			face: object! []
+		name: "Lander"
+		facename: "LanderFace" 
+		face: copy []
+		size: to-pair 22x34 
+		offset: to-pair 400x10 
+		direction: 6
+		rate: 0:0:00.1
+		firing: 0
+		lastdir: 0
+		inertia: 0.0
+		altitude: 0
+		lives: 4
+		gravity: true
+		display: true
+		dead: false
+		image: load %ship.png
+		images: copy []  
+		append images load %fship1.png
+		append images load %fship2.png
+		append images load %fship3.png
+		face: object! []
+	]
+	
+	Base: object [
+	name: "Base"
+		facename: "BaseFace" 
+		face: copy []
+		size: to-pair 60x10
+		offset: to-pair 231x473 
+		direction: 6
+		rate: 0:0:00.1
+		firing: 0
+		lastdir: 0
+		inertia: 0.0
+		altitude: 0
+		lives: 4
+		gravity: false
+		display: true
+		dead: false
+		image: load %base.png
+		images: copy []  
+		face: object! []
 	]
 ]
 
@@ -66,9 +87,12 @@ CheckStatus: function [][
 ]
 
 ; Gravity affect for lander
-LanderGravity: function [f [object!]] [
-	GameData/Lander/face/image: Gamedata/Lander/image
-	GameData/Lander/face/offset/y: add GameData/Lander/face/offset/y GameData/Gravity
+LanderManagement: function [f [object!]] [
+	OtherFace: CheckOverlaps f
+	if none? OtherFace [
+		GameData/Lander/face/image: Gamedata/Lander/image
+		GameData/Lander/face/offset/y: add GameData/Lander/face/offset/y GameData/Gravity
+	]
 ]
 
 ; Check keyboard for handling
@@ -128,7 +152,18 @@ GoRight: function [f [object!]][
 	]
 ]
 
-; Set game screen layout
+; Check if some face overlaps other face in the cave
+CheckOverlaps: function [f [object!]][
+	Ret: none
+	foreach-face GameData/MoonFace [
+		if face <> f [
+			if overlap? face f [Ret: face] ;Break would help here
+		]
+	]
+	return Ret
+]
+
+; Game screen layout
 GameScr: layout [
 	title "Moon Lander"
 	size 800x750
@@ -145,13 +180,24 @@ GameScr: layout [
 	below
 ]
 
-; Setup ship
+; Moon setup
+append GameScr/pane GameData/Moon
+
+; Ship face definition
 LanderFace: make face! [type: 'base size: GameData/Lander/size offset: GameData/Lander/offset image: copy GameData/Lander/image extra: GameData/Lander
-						rate: GameData/Lander/rate actors: context [on-time: func [f e][LanderGravity f]]]
+						rate: GameData/Lander/rate actors: context [on-time: func [f e][LanderManagement f]]]
 GameData/Lander/face: LanderFace
 LanderFace/extra: GameData/Lander
-append GameScr/pane GameData/Moon
 append GameScr/pane LanderFace
+
+; Base face definition
+BaseFace: make face! [type: 'base size: GameData/Base/size offset: GameData/Base/offset image: copy GameData/Base/image extra: GameData/Base]
+GameData/Base/face: BaseFace
+BaseFace/extra: GameData/Base
+append GameData/Moon/pane BaseFace
+
+
+
 	
 ; Start game
 view/options GameScr [actors: context [on-key: func [face event][CheckKeyboard face event/key]]]
