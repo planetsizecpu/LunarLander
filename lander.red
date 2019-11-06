@@ -8,7 +8,7 @@ Red [Needs: 'View
 recycle/off
 system/view/auto-sync?:  yes
 
-; Game data & defaults object
+; Game data object
 GameData: context [
 	GameRate: 0:00:00.004 
 	Gravity: 1
@@ -21,14 +21,13 @@ GameData: context [
 	WindowHlimitL: 1
 	WindowHlimitR: 778
 	
-	; Make moon object
+	; Make landing moon face 
 	MoonImg: load %moon.png
 	Moon: make face! [type: 'panel size: MoonImg/size offset: 0x0 pane: copy [] draw: copy [] 
 					  image: copy MoonImg extra: [] focus: true]
-	MoonFace: Moon
-	MoonFaceHalfSizeX: (MoonFace/size/x / 2) * -1
+	MoonHalfSizeX: (Moon/size/x / 2) * -1
 				  
-	; Make lander object
+	; Make lander ship object
 	Lander: object [
 		name: "Lander"
 		facename: "LanderFace" 
@@ -53,9 +52,10 @@ GameData: context [
 		face: object! []
 	]
 	
-	Base: object [
-	name: "Base"
-		facename: "BaseFace" 
+	; Make docking station object
+	Dock: object [
+		name: "Dock"
+		facename: "DockFace" 
 		face: copy []
 		size: to-pair 60x10
 		offset: to-pair 231x473 
@@ -139,7 +139,7 @@ GoRight: function [f [object!]][
 
 	; if ship is at the window center move the scenary else move the ship
 	either GameData/Lander/face/offset/x = GameData/WindowHcenter [	
-		either f/offset/x >= GameData/MoonFaceHalfSizeX [
+		either f/offset/x >= GameData/MoonHalfSizeX [
 			f/offset/x: f/offset/x - GameData/HorizontalStep
 			info/text: copy to-string f/offset/x
 		][
@@ -152,12 +152,13 @@ GoRight: function [f [object!]][
 	]
 ]
 
-; Check if some face overlaps other face in the cave
+; Check if some face overlaps other face
 CheckOverlaps: function [f [object!]][
 	Ret: none
-	foreach-face GameData/MoonFace [
+	foreach-face GameData/Moon [
+		print face/extra/name
 		if face <> f [
-			if overlap? face f [Ret: face] ;Break would help here
+			if overlap? face f [Ret: face  prin f/extra/name prin " OVERLAP " print face/extra/name] ;Break would help here
 		]
 	]
 	return Ret
@@ -180,27 +181,25 @@ GameScr: layout [
 	below
 ]
 
-; Moon setup
+; Landing moon addition
 append GameScr/pane GameData/Moon
 
-; Ship face definition
+; Lander ship face creation & addition
 LanderFace: make face! [type: 'base size: GameData/Lander/size offset: GameData/Lander/offset image: copy GameData/Lander/image extra: GameData/Lander
 						rate: GameData/Lander/rate actors: context [on-time: func [f e][LanderManagement f]]]
 GameData/Lander/face: LanderFace
 LanderFace/extra: GameData/Lander
 append GameScr/pane LanderFace
 
-; Base face definition
-BaseFace: make face! [type: 'base size: GameData/Base/size offset: GameData/Base/offset image: copy GameData/Base/image extra: GameData/Base]
-GameData/Base/face: BaseFace
-BaseFace/extra: GameData/Base
-append GameData/Moon/pane BaseFace
-
-
+; Docking station face creation & addition
+DockFace: make face! [type: 'base size: GameData/Dock/size offset: GameData/Dock/offset image: copy GameData/Dock/image extra: GameData/Dock]
+GameData/Dock/face: DockFace
+DockFace/extra: GameData/Dock
+; We add docking station into landing moon face, so it will move sync with terrain
+append GameData/Moon/pane DockFace
 
 	
 ; Start game
 view/options GameScr [actors: context [on-key: func [face event][CheckKeyboard face event/key]]]
-
 
 
