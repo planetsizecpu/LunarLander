@@ -156,7 +156,6 @@ GoRight: function [f [object!]][
 CheckOverlaps: function [f [object!]][
 	Ret: none
 	foreach-face GameData/Moon [
-		print face/extra/name
 		if face <> f [
 			if overlap? face f [Ret: face  prin f/extra/name prin " OVERLAP " print face/extra/name] ;Break would help here
 		]
