@@ -86,7 +86,7 @@ CheckStatus: function [][
 	return Ret
 ]
 
-; Gravity affect for lander
+; Gravity effect for lander
 LanderManagement: function [f [object!]] [
 	OtherFace: CheckOverlaps f
 	if none? OtherFace [
